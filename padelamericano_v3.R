@@ -120,6 +120,20 @@ create_americano_balanced <- function(num_courts, num_rounds, player_names = NUL
   } else {
     cat("✅ Perfekt: Keine Person musste doppelt mit demselben Partner spielen!\n")
   }
+  
+  cat("\n--- COURT-Konstellationen (Zusammen auf demselben Platz) ---\n")
+  cat(paste("Paare, die NIE am selben Court waren:       ", ifelse(is.na(court_counts["0"]), 0, court_counts["0"]), "\n"))
+  cat(paste("Paare, die EXAKT 1x am selben Court waren:  ", ifelse(is.na(court_counts["1"]), 0, court_counts["1"]), "\n"))
+  
+  wiederholte_courts <- names(court_counts)[as.numeric(names(court_counts)) > 1]
+  if(length(wiederholte_courts) > 0) {
+    for(w in wiederholte_courts) {
+      cat(paste("ℹ️ Info: Paare, die", w, "x am selben Court waren:       ", court_counts[w], "\n"))
+    }
+  } else {
+    cat("✅ Perfekt: Jede Begegnung auf dem Platz war absolut einzigartig!\n")
+  }
+  
   cat("======================================================\n\n")
   
   final_df <- data.frame(
@@ -166,7 +180,7 @@ padel_fair_turnier <- create_americano_balanced(
   num_rounds = 4,
   player_names = meine_spieler,
   skill_levels = meine_staerken,
-  iterations = 9000 # Mehr Iterationen helfen, den perfekten Kompromiss aus Fairness und Mix zu finden
+  iterations = 1000 # Mehr Iterationen helfen, den perfekten Kompromiss aus Fairness und Mix zu finden
 )
 
 # Exportieren
