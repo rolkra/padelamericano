@@ -11,8 +11,8 @@ total_players <- 16
 pause_groups <- list(13:16, 9:12, 5:8, 1:4)
 #pause_groups <- list()
 
-MAX_LOCAL_STEPS <- 3000  # Wie viele Tausch-Versuche wir pro Start zulassen
-MAX_ROUNDS <- 30
+MAX_LOCAL_STEPS <- 15000  # Wie viele Tausch-Versuche wir pro Start zulassen
+MAX_ROUNDS <- 100
 
 # Prepare -----------------------------------------------------------------
 
@@ -26,7 +26,7 @@ for (r in 1:num_rounds) {
 # Evaluate ----------------------------------------------------------------
 
 # KORRIGIERTE & SYMMETRISCHE Bewertungsfunktion
-evaluate_schedule <- function(schedule) {
+evaluate_schedule <- function(schedule, describe = FALSE) {
   # Matrizen zum Mitzählen während der Prüfung
   partner_matrix <- matrix(0, nrow = total_players, ncol = total_players)
   opponent_matrix <- matrix(0, nrow = total_players, ncol = total_players)
@@ -46,23 +46,40 @@ evaluate_schedule <- function(schedule) {
       partner_matrix[p2[2], p2[1]] <- partner_matrix[p2[2], p2[1]] + 1
       
       # Gegner symmetrisch eintragen
-      for (g1 in p1) {
-        for (g2 in p2) {
-          opponent_matrix[g1, g2] <- opponent_matrix[g1, g2] + 1
-          opponent_matrix[g2, g1] <- opponent_matrix[g2, g1] + 1
-        }
-      }
+      opponent_matrix[court[1], court[2]] <- opponent_matrix[court[1], court[2]] + 1
+      opponent_matrix[court[1], court[3]] <- opponent_matrix[court[1], court[3]] + 1
+      opponent_matrix[court[1], court[4]] <- opponent_matrix[court[1], court[4]] + 1
+      opponent_matrix[court[2], court[3]] <- opponent_matrix[court[2], court[3]] + 1
+      opponent_matrix[court[2], court[4]] <- opponent_matrix[court[2], court[4]] + 1
+      opponent_matrix[court[3], court[4]] <- opponent_matrix[court[3], court[4]] + 1
+
+      opponent_matrix[court[2], court[1]] <- opponent_matrix[court[2], court[1]] + 1
+      opponent_matrix[court[3], court[1]] <- opponent_matrix[court[3], court[1]] + 1
+      opponent_matrix[court[4], court[1]] <- opponent_matrix[court[4], court[1]] + 1
+      opponent_matrix[court[3], court[2]] <- opponent_matrix[court[3], court[2]] + 1
+      opponent_matrix[court[4], court[2]] <- opponent_matrix[court[4], court[2]] + 1
+      opponent_matrix[court[4], court[3]] <- opponent_matrix[court[4], court[3]] + 1
+      
     }
   }
   
   # Strafpunkte berechnen
   # Partner-Duplikate massiv bestrafen
-  partner_score <- sum(partner_matrix[partner_matrix > 1] - 1) * 1000
+  partner_multiple <- sum(partner_matrix[partner_matrix > 1]) / 2
   # Gegner-Duplikate einfach bestrafen
-  opponent_score <- sum(opponent_matrix[opponent_matrix > 1] - 1)
+  opponent_multiple <- sum(opponent_matrix[opponent_matrix > 1]) / 2
+  opponent_multiple_max <- max(opponent_matrix)
+
+  return_score <- ((partner_multiple * 1000 + opponent_multiple) + opponent_multiple_max * 100)
+  return_string <- paste("  | same team", partner_multiple, " ,same court", opponent_multiple, " ,same court max", opponent_multiple_max, "\n")
   
-  return(partner_score + opponent_score)
+  if (describe == TRUE) {  
+    cat(return_string)
+  }
+  
+  return(return_score)
 }
+
 
 # Optimize ----------------------------------------------------------------
 
@@ -126,10 +143,12 @@ while (best_score > 0 && rounds <= MAX_ROUNDS) {
   }
   
   rounds <- rounds + 1
-  cat("Runde =", rounds, "| Score =", best_score, "\n")
+  cat("Runde =", rounds, "| Score =", best_score)
+  evaluate_schedule(best_schedule, describe = TRUE)
 }
 
 cat("Erfolg! Ein mathematisch perfekter Turnierplan wurde gefunden.\n")
+
 
 # Output ------------------------------------------------------------------
 
